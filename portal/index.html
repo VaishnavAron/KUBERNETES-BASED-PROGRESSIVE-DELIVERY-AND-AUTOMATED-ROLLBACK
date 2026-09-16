@@ -1,0 +1,524 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progressive Delivery & Automated Rollback — Operations Console</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+    /* Sidebar Navigation */
+    aside {
+      width: 250px;
+      background-color: var(--card-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .brand {
+      padding: 20px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    nav {
+      padding: 15px 10px;
+      flex: 1;
+    }
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      letter-spacing: 0.05em;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: 6px;
+      margin-bottom: 3px;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .nav-item:hover {
+      background-color: var(--border-subtle);
+      color: var(--text);
+    }
+    .nav-item.active {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .badge-count {
+      margin-left: auto;
+      background: #e2e8f0;
+      color: var(--text);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    /* Main Content */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title h1 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .header-title p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .cluster-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--success-light);
+      color: var(--success);
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid #bbf7d0;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .content-area {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    /* Workflow Banner */
+    .flow-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .flow-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+    .flow-steps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .flow-step {
+      flex: 1;
+      min-width: 150px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+    .flow-step.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .step-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .flow-step.active .step-num { color: var(--primary); }
+    .step-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .step-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .flow-arrow {
+      color: #94a3b8;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .card-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 8px;
+      letter-spacing: -0.02em;
+    }
+    .card-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .badge-green { background: var(--success-light); color: var(--success); }
+    .badge-blue { background: var(--primary-light); color: var(--primary); }
+    .badge-amber { background: var(--warning-light); color: var(--warning); }
+    .badge-red { background: var(--danger-light); color: var(--danger); }
+    /* Quick Links / Embed Section */
+    .view-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .view-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+    }
+    .view-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .view-tab {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: white;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .view-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .view-actions a {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+      margin-left: 12px;
+    }
+    .view-frame {
+      width: 100%;
+      height: 520px;
+      border: none;
+      background: white;
+    }
+    /* Command Reference */
+    .cmd-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 14px 18px;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+    .cmd-comment { color: #94a3b8; }
+    .cmd-highlight { color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside>
+    <div class="brand">
+      <div class="brand-icon">PD</div>
+      <span>Argo Rollouts SRE</span>
+    </div>
+    <nav>
+      <div class="nav-label">Operations</div>
+      <a class="nav-item active" onclick="switchSection('overview')">
+        <span>Overview</span>
+      </a>
+      <a class="nav-item" onclick="switchSection('applications')">
+        <span>Applications</span>
+        <span class="badge-count">1</span>
+      </a>
+      <a class="nav-item" onclick="switchSection('deployments')">
+        <span>Deployments</span>
+      </a>
+      <a class="nav-item" onclick="switchSection('rollouts')">
+        <span>Rollouts</span>
+        <span class="badge-count badge-blue">Active</span>
+      </a>
+      <div class="nav-label" style="margin-top: 14px;">Observability</div>
+      <a class="nav-item" onclick="switchSection('monitoring')">
+        <span>Monitoring (Grafana)</span>
+      </a>
+      <a class="nav-item" onclick="switchSection('logs')">
+        <span>Logs & Metrics</span>
+      </a>
+      <a class="nav-item" onclick="switchSection('alerts')">
+        <span>Analysis Alerts</span>
+      </a>
+    </nav>
+    <div style="padding: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted);">
+      <div>Stack: Kubernetes + Argo Rollouts</div>
+      <div style="margin-top: 4px;">Telemetry: Prometheus + Grafana</div>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <main>
+    <header>
+      <div class="header-title">
+        <h1>Progressive Delivery & Automated Rollback</h1>
+        <p>Deployment Control Plane & Observability Integration</p>
+      </div>
+      <div class="cluster-status">
+        <span class="status-dot"></span>
+        <span>Kind Cluster: Healthy (1 Node)</span>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Progressive Delivery Flow Pipeline -->
+      <div class="flow-card">
+        <div class="flow-title">Delivery Pipeline State</div>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">STAGE 1</div>
+            <div class="step-title">Traffic Split</div>
+            <div class="step-desc">20% Canary / 80% Stable</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step active">
+            <div class="step-num">STAGE 2</div>
+            <div class="step-title">Observe Window</div>
+            <div class="step-desc">10s initial dwell period</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="step-num">STAGE 3</div>
+            <div class="step-title">Analyze</div>
+            <div class="step-desc">Prometheus metrics (count: 3)</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="step-num">STAGE 4 (A)</div>
+            <div class="step-title" style="color: var(--success);">Promote</div>
+            <div class="step-desc">40% → 60% → 80% → 100%</div>
+          </div>
+          <span class="flow-arrow">OR</span>
+          <div class="flow-step">
+            <div class="step-num">STAGE 4 (B)</div>
+            <div class="step-title" style="color: var(--danger);">Abort / Rollback</div>
+            <div class="step-desc">Degraded &gt; Revert to Stable</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Cards -->
+      <div class="metrics-grid">
+        <div class="card">
+          <div class="card-label">
+            <span>Workload</span>
+            <span class="badge badge-green">Running</span>
+          </div>
+          <div class="card-value">canary-demo</div>
+          <div class="card-sub">Replicas: 5/5 Ready</div>
+        </div>
+        <div class="card">
+          <div class="card-label">
+            <span>Active Stable</span>
+            <span class="badge badge-blue">Production</span>
+          </div>
+          <div class="card-value" style="font-size: 17px; font-family: monospace;">rollouts-demo:blue</div>
+          <div class="card-sub">Traffic Weight: 100%</div>
+        </div>
+        <div class="card">
+          <div class="card-label">
+            <span>Prometheus Analysis</span>
+            <span class="badge badge-green">Success &ge; 95%</span>
+          </div>
+          <div class="card-value">100.0%</div>
+          <div class="card-sub">avg_over_time [20s]</div>
+        </div>
+        <div class="card">
+          <div class="card-label">
+            <span>P95 Latency</span>
+            <span class="badge badge-green">&lt; 500ms</span>
+          </div>
+          <div class="card-value">&lt; 15 ms</div>
+          <div class="card-sub">Probe response time</div>
+        </div>
+      </div>
+
+      <!-- Integrated Dashboard View -->
+      <div class="view-card">
+        <div class="view-header">
+          <div class="view-tabs">
+            <button class="view-tab active" onclick="loadFrame('rollouts')">Argo Rollouts UI</button>
+            <button class="view-tab" onclick="loadFrame('grafana')">Grafana Dashboard</button>
+            <button class="view-tab" onclick="loadFrame('prometheus')">Prometheus Queries</button>
+            <button class="view-tab" onclick="loadFrame('app')">Live Application</button>
+          </div>
+          <div class="view-actions">
+            <a id="external-link" href="http://localhost:3100/rollouts" target="_blank">Open in New Tab &#8599;</a>
+          </div>
+        </div>
+        <iframe id="main-frame" class="view-frame" src="http://localhost:3100/rollouts"></iframe>
+      </div>
+
+      <!-- Operational Playbook & Commands -->
+      <div class="flow-card">
+        <div class="flow-title">Operational Demonstration Playbook</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <strong style="font-size: 13px; color: var(--success);">&#9654; Scenario A: Successful Canary Promotion</strong>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Deploys healthy version (yellow). Passes Prometheus analysis, advances traffic 20% &rarr; 40% &rarr; 60% &rarr; 80% &rarr; 100%.</p>
+            <div class="cmd-box">
+              <span class="cmd-comment"># 1. Trigger healthy release</span><br/>
+              <span class="cmd-highlight">kubectl argo rollouts set image canary-demo canary-demo=argoproj/rollouts-demo:yellow</span><br/><br/>
+              <span class="cmd-comment"># 2. Watch canary steps & analysis</span><br/>
+              <span class="cmd-highlight">kubectl argo rollouts get rollout canary-demo --watch</span>
+            </div>
+          </div>
+          <div>
+            <strong style="font-size: 13px; color: var(--danger);">&#9654; Scenario B: Faulty Release & Automated Rollback</strong>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Deploys failing version (bad-red). Prometheus detects errors, Analysis fails, Argo automatically aborts release.</p>
+            <div class="cmd-box">
+              <span class="cmd-comment"># 1. Trigger failing release</span><br/>
+              <span class="cmd-highlight">kubectl argo rollouts set image canary-demo canary-demo=argoproj/rollouts-demo:bad-red</span><br/><br/>
+              <span class="cmd-comment"># 2. Confirm automated abort & zero downtime</span><br/>
+              <span class="cmd-highlight">kubectl argo rollouts get rollout canary-demo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const urls = {
+      rollouts: "http://localhost:3100/rollouts",
+      grafana: "http://localhost:3000/d/progressive-delivery-canary/progressive-delivery-and-canary-observability?orgId=1&kiosk",
+      prometheus: "http://localhost:9090/graph?g0.expr=probe_success&g0.tab=0",
+      app: "http://localhost:8080"
+    };
+
+    function loadFrame(target) {
+      document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      const url = urls[target];
+      document.getElementById('main-frame').src = url;
+      document.getElementById('external-link').href = url;
+    }
+
+    function switchSection(sec) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      if (sec === 'monitoring') {
+        loadFrameByName('grafana');
+      } else if (sec === 'rollouts') {
+        loadFrameByName('rollouts');
+      }
+    }
+
+    function loadFrameByName(target) {
+      document.querySelectorAll('.view-tab').forEach(b => {
+        if (b.innerText.toLowerCase().includes(target)) {
+          b.click();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

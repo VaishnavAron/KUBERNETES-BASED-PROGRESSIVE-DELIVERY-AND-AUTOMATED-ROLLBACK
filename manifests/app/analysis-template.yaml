@@ -1,0 +1,29 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: default
+spec:
+  metrics:
+  - name: success-rate
+    interval: 5s
+    count: 3
+    initialDelay: 5s
+    failureLimit: 1
+    successCondition: result[0] >= 0.95
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          avg_over_time(probe_success{instance="http://canary-demo-preview.default.svc.cluster.local/color"}[20s])
+  - name: latency-check
+    interval: 5s
+    count: 3
+    initialDelay: 5s
+    failureLimit: 1
+    successCondition: result[0] <= 0.50
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          probe_duration_seconds{instance="http://canary-demo-preview.default.svc.cluster.local/color"}

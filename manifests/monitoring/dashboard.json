@@ -1,0 +1,234 @@
+﻿{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Rollout Health & Availability Overview",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 95 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "title": "Canary Success Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_success{instance=\"http://canary-demo-preview.default.svc.cluster.local/color\"}[1m]) * 100",
+          "legendFormat": "Canary (Preview)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 95 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "title": "Stable Success Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_success{instance=\"http://canary-demo.default.svc.cluster.local/color\"}[1m]) * 100",
+          "legendFormat": "Stable (Production)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"]
+        }
+      },
+      "title": "Canary Latency (Probe)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{instance=\"http://canary-demo-preview.default.svc.cluster.local/color\"} * 1000",
+          "legendFormat": "Canary Latency",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "Degraded / Aborted" }, "1": { "color": "green", "text": "Healthy" }, "2": { "color": "blue", "text": "Progressing" }, "3": { "color": "yellow", "text": "Paused" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "justifyMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "title": "Rollout Replicas Available",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(kube_pod_status_ready{condition=\"true\",namespace=\"default\"}) or vector(5)",
+          "legendFormat": "Available Pods",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 101,
+      "title": "Telemetry & Analysis Trends",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 5,
+      "title": "Probe Success Rate (1 = 100% 200 OK)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "probe_success{instance=\"http://canary-demo.default.svc.cluster.local/color\"}",
+          "legendFormat": "Stable Service",
+          "refId": "A"
+        },
+        {
+          "expr": "probe_success{instance=\"http://canary-demo-preview.default.svc.cluster.local/color\"}",
+          "legendFormat": "Canary Preview Service",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 6,
+      "title": "HTTP Response Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{instance=\"http://canary-demo.default.svc.cluster.local/color\"}",
+          "legendFormat": "Stable Response Time",
+          "refId": "A"
+        },
+        {
+          "expr": "probe_duration_seconds{instance=\"http://canary-demo-preview.default.svc.cluster.local/color\"}",
+          "legendFormat": "Canary Response Time",
+          "refId": "B"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "light",
+  "tags": ["argo-rollouts", "canary", "kubernetes"],
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "Progressive Delivery & Canary Observability",
+  "uid": "progressive-delivery-canary"
+}

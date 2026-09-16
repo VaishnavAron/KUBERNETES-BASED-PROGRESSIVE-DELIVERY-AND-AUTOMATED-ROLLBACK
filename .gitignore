@@ -1,0 +1,11 @@
+﻿# Office lock / temp files
+~$*
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Windows Executables (downloaded on-the-fly, not compatible with Linux EC2)
+bin/*.exe
+bin/
