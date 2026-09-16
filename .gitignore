@@ -1,4 +1,4 @@
-﻿# Office lock / temp files
+# Office lock / temp files
 ~$*
 
 # OS / Editor artifacts
@@ -9,3 +9,6 @@ Thumbs.db
 # Windows Executables (downloaded on-the-fly, not compatible with Linux EC2)
 bin/*.exe
 bin/
+
+# AWS & SSH private keys
+*.pem
