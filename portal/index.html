@@ -320,14 +320,6 @@
       flex-direction: column;
       gap: 8px;
     }
-    .metrics-note {
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 2px 4px;
-    }
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -447,105 +439,127 @@
     .toast.show {
       display: flex;
     }
-    /* Enhancement 1: Rollout Event Timeline */
-    .timeline-card {
+    /* Rollout Activity (Consolidated Compact Card) */
+    .activity-card {
       background-color: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 18px 24px;
+      padding: 14px 20px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .timeline-header {
+    .activity-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
     }
-    .timeline-title {
+    .activity-title {
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
+    }
+    .activity-link {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .activity-link:hover {
+      text-decoration: underline;
+    }
+    .activity-grid {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .activity-subhead {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .event-row {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-    .timeline-box {
-      max-height: 180px;
-      overflow-y: auto;
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12px;
+      line-height: 1.3;
+      overflow: hidden;
     }
-    .timeline-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      line-height: 1.4;
-    }
-    .timeline-time {
-      color: var(--text-muted);
-      font-size: 11px;
-      white-space: nowrap;
-      min-width: 60px;
-    }
-    .timeline-icon {
-      font-size: 12px;
-      line-height: 1.4;
+    .event-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       flex-shrink: 0;
     }
-    .timeline-msg {
-      color: var(--text);
-      word-break: break-word;
+    .dot-blue { background-color: #2563eb; }
+    .dot-green { background-color: #16a34a; }
+    .dot-amber { background-color: #d97706; }
+    .dot-red { background-color: #dc2626; }
+    .event-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-
-    /* Enhancement 2: Active Pods Panel */
-    .pods-container {
+    .event-msg {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .pods-box {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 10px;
     }
     .pod-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 8px;
       font-size: 12px;
     }
-    .pod-row-label {
+    .pod-label {
       font-weight: 600;
       color: var(--text);
-      min-width: 55px;
+      width: 50px;
+      flex-shrink: 0;
     }
     .pod-dots {
       display: flex;
-      gap: 5px;
       align-items: center;
-      flex: 1;
-      margin: 0 8px;
+      gap: 4px;
+      flex-wrap: wrap;
     }
     .pod-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       display: inline-block;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
     }
     .pod-dot-blue { background-color: #2563eb; }
     .pod-dot-yellow { background-color: #eab308; }
     .pod-dot-red { background-color: #dc2626; }
-    .pod-count-text {
+    .pod-count {
       font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
       white-space: nowrap;
+      margin-left: 2px;
     }
 
     /* Enhancement 3: Request Grid Legend (Live Application Tab) */
@@ -707,25 +721,41 @@
         </div>
       </div>
 
-      <!-- Enhancement 1: Rollout Event Timeline -->
-      <div class="timeline-card">
-        <div class="timeline-header">
-          <div class="timeline-title">
-            <span>&#9201; Real-Time Rollout Event Timeline</span>
-          </div>
-          <span class="badge badge-blue">Live Cluster Telemetry (Last 15 Events)</span>
+      <!-- Consolidated Rollout Activity Card -->
+      <div class="activity-card">
+        <div class="activity-header">
+          <div class="activity-title">Rollout Activity</div>
+          <a class="activity-link" href="http://localhost:3100/rollouts" target="_blank" rel="noopener noreferrer">View full history &#8599;</a>
         </div>
-        <div class="timeline-box" id="timeline-box">
-          <div style="color: var(--text-muted); font-style: italic;">Loading rollout events...</div>
+        <div class="activity-grid">
+          <!-- Left Column (~60%): Recent Events (Last 4) -->
+          <div class="activity-col-events">
+            <div class="activity-subhead">Recent Events</div>
+            <div class="events-list" id="recent-events-list">
+              <div style="font-size: 11px; color: var(--text-muted); font-style: italic;">Loading events...</div>
+            </div>
+          </div>
+          <!-- Right Column (~40%): Active Pods -->
+          <div class="activity-col-pods">
+            <div class="activity-subhead">Active Pods</div>
+            <div class="pods-box">
+              <div class="pod-row">
+                <span class="pod-label">Stable</span>
+                <div class="pod-dots" id="dots-stable"></div>
+                <span class="pod-count" id="text-stable-pods">5 pods</span>
+              </div>
+              <div class="pod-row">
+                <span class="pod-label">Canary</span>
+                <div class="pod-dots" id="dots-canary"></div>
+                <span class="pod-count" id="text-canary-pods">(0)</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Live Dynamic Metric Cards -->
       <div class="metrics-section">
-        <div class="metrics-note">
-          <span>&#9432;</span>
-          <span>Live telemetry is continuously synchronized from Kubernetes and Prometheus every 3 seconds.</span>
-        </div>
         <div class="metrics-grid">
           <div class="card" id="card-workload">
             <div class="card-label">
@@ -758,25 +788,6 @@
             </div>
             <div class="card-value" id="val-latency">&lt; 15 ms</div>
             <div class="card-sub">Probe response duration</div>
-          </div>
-          <!-- Enhancement 2: Active Pods Mini-Panel -->
-          <div class="card" id="card-pods">
-            <div class="card-label">
-              <span>Active Pods Allocation</span>
-              <span class="badge badge-blue" id="badge-total-pods">5 Pods</span>
-            </div>
-            <div class="pods-container">
-              <div class="pod-row">
-                <span class="pod-row-label">Stable:</span>
-                <div class="pod-dots" id="dots-stable"></div>
-                <span class="pod-count-text" id="text-stable-pods">5 pods</span>
-              </div>
-              <div class="pod-row">
-                <span class="pod-row-label">Canary:</span>
-                <div class="pod-dots" id="dots-canary"></div>
-                <span class="pod-count-text" id="text-canary-pods">0 pods</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -994,16 +1005,14 @@
     function renderActivePods(data) {
       const stableCount = data.stablePods !== undefined ? data.stablePods : 5;
       const canaryCount = data.canaryPods !== undefined ? data.canaryPods : 0;
-      const total = stableCount + canaryCount;
-
-      const badgeTotal = document.getElementById('badge-total-pods');
-      if (badgeTotal) badgeTotal.innerText = `${total} Pods`;
 
       const textStable = document.getElementById('text-stable-pods');
-      if (textStable) textStable.innerText = `${stableCount} pod${stableCount === 1 ? '' : 's'}`;
+      if (textStable) textStable.innerText = `${stableCount} pods`;
 
       const textCanary = document.getElementById('text-canary-pods');
-      if (textCanary) textCanary.innerText = `${canaryCount} pod${canaryCount === 1 ? '' : 's'}`;
+      if (textCanary) {
+        textCanary.innerText = canaryCount > 0 ? `${canaryCount} pod${canaryCount === 1 ? '' : 's'}` : '(0)';
+      }
 
       // Render Stable Dots (Blue)
       const stableDotsContainer = document.getElementById('dots-stable');
@@ -1012,50 +1021,51 @@
         for (let i = 0; i < stableCount; i++) {
           stableHtml += '<span class="pod-dot pod-dot-blue" title="Stable Pod"></span>';
         }
-        if (stableCount === 0) stableHtml = '<span style="color:var(--text-muted); font-size:11px;">none</span>';
         stableDotsContainer.innerHTML = stableHtml;
       }
 
-      // Render Canary Dots (Yellow or Red if Degraded)
+      // Render Canary Dots (Yellow normally; Red if Degraded; empty if zero)
       const canaryDotsContainer = document.getElementById('dots-canary');
       if (canaryDotsContainer) {
         let canaryHtml = '';
-        const canaryDotClass = data.phase === 'Degraded' ? 'pod-dot pod-dot-red' : 'pod-dot pod-dot-yellow';
-        for (let i = 0; i < canaryCount; i++) {
-          canaryHtml += `<span class="pod-dot ${canaryDotClass}" title="Canary Pod (${data.phase})"></span>`;
+        if (canaryCount > 0) {
+          const canaryDotClass = data.phase === 'Degraded' ? 'pod-dot pod-dot-red' : 'pod-dot pod-dot-yellow';
+          for (let i = 0; i < canaryCount; i++) {
+            canaryHtml += `<span class="pod-dot ${canaryDotClass}" title="Canary Pod (${data.phase})"></span>`;
+          }
         }
-        if (canaryCount === 0) canaryHtml = '<span style="color:var(--text-muted); font-size:11px;">none (idle)</span>';
         canaryDotsContainer.innerHTML = canaryHtml;
       }
     }
 
     function renderTimelineEvents(events) {
-      const box = document.getElementById('timeline-box');
-      if (!box) return;
+      const list = document.getElementById('recent-events-list');
+      if (!list) return;
 
       if (!events || events.length === 0) {
-        box.innerHTML = '<div style="color: var(--text-muted); font-style: italic;">No rollout events recorded yet.</div>';
+        list.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); font-style: italic;">No rollout events recorded yet.</div>';
         return;
       }
 
-      const icons = {
-        progressing: '🔵',
-        info: '🟡',
-        healthy: '🟢',
-        failed: '🔴'
+      // Map event types to CSS dot classes (blue/green/red/amber, no emoji)
+      const dotClasses = {
+        progressing: 'dot-blue',
+        healthy: 'dot-green',
+        info: 'dot-amber',
+        failed: 'dot-red'
       };
 
-      const html = events.map(e => {
-        const icon = icons[e.type] || '⚪';
-        return `<div class="timeline-item">
-          <span class="timeline-time">[${e.time}]</span>
-          <span class="timeline-icon">${icon}</span>
-          <span class="timeline-msg">${escapeHtml(e.message)}</span>
+      // Show only the last 4 events
+      const recent = events.slice(-4);
+
+      list.innerHTML = recent.map(e => {
+        const dotClass = dotClasses[e.type] || 'dot-amber';
+        return `<div class="event-row" title="${escapeHtml(e.message)}">
+          <span class="event-dot ${dotClass}"></span>
+          <span class="event-time">${e.time}</span>
+          <span class="event-msg">${escapeHtml(e.message)}</span>
         </div>`;
       }).join('');
-
-      box.innerHTML = html;
-      box.scrollTop = box.scrollHeight;
     }
 
     function escapeHtml(text) {
