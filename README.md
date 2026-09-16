@@ -1,7 +1,7 @@
 ﻿# BTech Major Project: Progressive Delivery and Automated Rollback for Containerized Applications
 
 ## Overview
-This project implements an end-to-end cloud-native **Progressive Delivery & Automated Rollback** platform using **Kubernetes**, **Argo Rollouts**, **Prometheus**, and **Grafana**. 
+This project implements an end-to-end cloud-native **Progressive Delivery & Automated Rollback** platform using **Kubernetes**, **Argo Rollouts**, **Prometheus**, and **Grafana**, controlled via an interactive **Click-to-Deploy Operations Console** powered by a lightweight Python Flask backend.
 
 Instead of traditional all-at-once ("big bang") deployments, new containerized versions are introduced incrementally through canary traffic slicing. During each stage, the system enforces an **observation window** where live Prometheus telemetry is evaluated by an Argo Rollouts `AnalysisTemplate`.
 - **Healthy releases** pass metric checks and are progressively promoted ($20\% \to 40\% \to 60\% \to 80\% \to 100\%$).
@@ -13,7 +13,7 @@ Instead of traditional all-at-once ("big bang") deployments, new containerized v
 
 | Component | Role | Local URL / Port |
 | :--- | :--- | :--- |
-| **Operations Console** | Unified SRE Light-Theme Portal | [http://localhost:5000](http://localhost:5000) |
+| **Operations Console** | Interactive 1-Click Flask Portal | [http://localhost:5000](http://localhost:5000) |
 | **Argo Rollouts UI** | Official Rollout Controller Dashboard | [http://localhost:3100/rollouts](http://localhost:3100/rollouts) |
 | **Grafana** | Live Observability & Telemetry View | [http://localhost:3000](http://localhost:3000) |
 | **Prometheus** | Metrics Collection & Analysis Data Source | [http://localhost:9090](http://localhost:9090) |
@@ -21,54 +21,42 @@ Instead of traditional all-at-once ("big bang") deployments, new containerized v
 
 ---
 
-## Step-by-Step Demonstration Playbook
+## Zero-Terminal Faculty Demonstration Workflow
 
-### 1. Start the Environment & Dashboards
-To launch port-forwarding tunnels and open the portal:
+> [!IMPORTANT]
+> **No Terminal Interaction Needed During Demo!**  
+> Everything happens entirely inside your browser from the **Operations Console** at `http://localhost:5000`. You do **not** need to touch the terminal or copy-paste commands during the presentation.
+
+### 1. Launch All Services (One-Time Startup)
+In PowerShell:
 ```powershell
 .\scripts\start-all.ps1
+# Or manually run: python portal/server.py
 ```
+This automatically verifies the Kubernetes cluster, establishes the background port-forward tunnels, launches the Flask backend, and opens your browser directly to `http://localhost:5000`.
 
-### 2. Scenario A — Successful Canary Promotion (Happy Path)
-1. Trigger a healthy release update (`argoproj/rollouts-demo:yellow`):
-   ```powershell
-   .\scripts\demo-canary-success.ps1
-   # Or directly:
-   kubectl argo rollouts set image canary-demo canary-demo=argoproj/rollouts-demo:yellow
-   ```
-2. **Observation & Analysis:**
-   - Traffic routes 20% to canary, 80% to stable.
-   - Dwell period (10s) elapses.
-   - Prometheus runs 3 consecutive metric checks (`avg_over_time(probe_success) >= 0.95`).
-   - Checks pass (`AnalysisRun: Successful`).
-   - Traffic advances to 40%, 60%, 80%, and final 100% promotion.
-3. Monitor via CLI:
-   ```powershell
-   kubectl argo rollouts get rollout canary-demo --watch
-   ```
+### 2. Live Demo: Scenario A — Successful Canary Promotion (Happy Path)
+1. In the browser dashboard, click **"Run Successful Canary Promotion"**.
+2. **What Happens Automatically:**
+   - The button shows a spinner (`Deploying Canary (Yellow)...`) and triggers `POST /api/demo/success`.
+   - The canary receives 20% traffic while stable retains 80%.
+   - The live metric cards immediately update to `Traffic Allocation: 20%` and `Phase: Progressing`.
+   - The 10s observation window elapses, Prometheus collects healthy probe metrics, and `AnalysisRun` passes (`SLA ≥ 95%`).
+   - The system automatically promotes through 40% $\to$ 60% $\to$ 80% $\to$ 100% full promotion.
+   - The embedded Argo Rollouts UI below reflects every step live with zero page refreshes.
 
-### 3. Scenario B — Faulty Release & Automated Rollback (Failure Path)
-1. Trigger a faulty release update (`argoproj/rollouts-demo:bad-red`):
-   ```powershell
-   .\scripts\demo-canary-rollback.ps1
-   # Or directly:
-   kubectl argo rollouts set image canary-demo canary-demo=argoproj/rollouts-demo:bad-red
-   ```
-2. **Observation & Automated Abort:**
-   - Canary receives 20% traffic.
-   - During observation, the canary returns HTTP 500 errors.
-   - Prometheus records degraded probe success rate.
-   - Argo Rollouts AnalysisTemplate evaluates the metric, identifies `success-rate < 0.95`, and reaches failure limit.
-   - Rollout state transitions to `✖ Degraded / Aborted`.
-   - The canary pods are immediately terminated and scaled down.
-   - 100% of production traffic remains served by the stable baseline replica set with **zero user downtime**.
+### 3. Live Demo: Scenario B — Faulty Canary & Automated Rollback (Failure Path)
+1. In the browser dashboard, click **"Run Faulty Canary & Rollback"**.
+2. **What Happens Automatically:**
+   - The button shows a spinner (`Deploying Faulty (Bad-Red)...`) and triggers `POST /api/demo/rollback`.
+   - Canary receives 20% traffic and throws HTTP 500 errors.
+   - Prometheus probe success rate drops drastically (`SLA < 95% Fail`).
+   - Argo Rollouts AnalysisTemplate assesses metric failure (`failureLimit: 1` exceeded).
+   - Rollout status shifts to `✖ Degraded / Aborted` in RED.
+   - The bad canary pods are terminated, traffic drops to 0%, and 100% of production traffic remains safely on stable `blue` with **zero user downtime**.
 
 ### 4. Restore Baseline (Clean State)
-```powershell
-.\scripts\restore-baseline.ps1
-# Or:
-kubectl argo rollouts undo canary-demo
-```
+Click **"Restore Baseline (Blue)"** on the dashboard to return the rollout to a clean `100% stable` baseline at any point.
 
 ---
 
@@ -91,12 +79,13 @@ btech final project/
 │       ├── canary-rollout.yaml        # Rollout resource with canary steps & analysis
 │       └── analysis-template.yaml     # Prometheus metric analysis definition
 ├── portal/
-│   └── index.html                     # Light-theme enterprise operational console
+│   ├── index.html                     # Polished, interactive light-theme SRE console
+│   └── server.py                      # Flask API backend (serves UI & executes actions)
 ├── rollouts-demo/                     # Cloned official Argo Rollouts demo repository
 ├── scripts/
-│   ├── start-all.ps1                  # Launches all port-forwards and portal
-│   ├── demo-canary-success.ps1        # Runs Scenario A
-│   ├── demo-canary-rollback.ps1       # Runs Scenario B
+│   ├── start-all.ps1                  # Launches all port-forwards and Flask portal
+│   ├── demo-canary-success.ps1        # PowerShell CLI alternative for Scenario A
+│   ├── demo-canary-rollback.ps1       # PowerShell CLI alternative for Scenario B
 │   └── restore-baseline.ps1           # Resets to baseline stable version
 └── README.md                          # Project documentation and guide
 ```
@@ -108,8 +97,8 @@ btech final project/
 **Q1: What problem does this project solve?**  
 A: It mitigates the operational blast radius of software releases. Instead of updating 100% of pods at once, canary progressive delivery routes a small percentage of live traffic to the new revision, analyzes telemetry via Prometheus during an observation window, and automatically aborts if health degradations occur.
 
-**Q2: Why not just rollback through Git?**  
-A: Git commits represent desired state changes, but do not provide runtime traffic shifting, automated metric evaluation, or instantaneous automated rollbacks based on real-time latency and error rates.
+**Q2: How does the 1-Click Operations Console work?**  
+A: The frontend interacts with a lightweight Python Flask API (`portal/server.py`). When actions are clicked, Flask invokes the rollout lifecycle via `kubectl argo rollouts` commands and continuously synchronizes Kubernetes rollout CRD status and Prometheus telemetry to power real-time metric cards and pipeline state diagrams.
 
 **Q3: How does the automated rollback trigger?**  
-A: Argo Rollouts executes an `AnalysisTemplate` connecting to Prometheus. It executes PromQL queries (e.g. `avg_over_time(probe_success) >= 0.95`). When the canary generates errors, the metric check fails, exceeding `failureLimit`. The Argo Rollouts controller then marks the rollout as `Degraded`, reduces canary traffic weight to 0, and scales down canary pods while keeping stable pods active.
+A: Argo Rollouts executes an `AnalysisTemplate` connecting to Prometheus. It executes PromQL queries (`avg_over_time(probe_success) >= 0.95`). When the canary generates errors, the metric check fails, exceeding `failureLimit`. The Argo Rollouts controller then marks the rollout as `Degraded`, reduces canary traffic weight to 0%, and scales down canary pods while keeping stable pods active.

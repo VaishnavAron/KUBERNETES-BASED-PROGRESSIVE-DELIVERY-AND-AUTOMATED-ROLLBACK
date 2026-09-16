@@ -101,15 +101,6 @@
       font-size: 12px;
       color: #94a3b8;
     }
-    .badge-count {
-      margin-left: auto;
-      background: #e2e8f0;
-      color: var(--text);
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 10px;
-      font-weight: 600;
-    }
     /* Main Content */
     main {
       flex: 1;
@@ -194,7 +185,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 18px;
+      padding: 10px 20px;
       font-size: 13px;
       font-weight: 600;
       border-radius: 6px;
@@ -203,18 +194,22 @@
       transition: all 0.15s ease;
       text-decoration: none;
     }
+    .btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
     .btn-success {
       background-color: var(--success);
       color: white;
     }
-    .btn-success:hover {
+    .btn-success:hover:not(:disabled) {
       background-color: #15803d;
     }
     .btn-danger {
       background-color: var(--danger);
       color: white;
     }
-    .btn-danger:hover {
+    .btn-danger:hover:not(:disabled) {
       background-color: #b91c1c;
     }
     .btn-secondary {
@@ -222,8 +217,20 @@
       color: #334155;
       border-color: #cbd5e1;
     }
-    .btn-secondary:hover {
+    .btn-secondary:hover:not(:disabled) {
       background-color: #e2e8f0;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     .demo-note {
       font-size: 12px;
@@ -255,25 +262,6 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
-    }
-    .flow-toggle {
-      display: flex;
-      gap: 6px;
-    }
-    .flow-toggle-btn {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: white;
-      cursor: pointer;
-      color: var(--text-muted);
-    }
-    .flow-toggle-btn.active {
-      background: var(--text);
-      color: white;
-      border-color: var(--text);
     }
     .flow-steps {
       display: flex;
@@ -326,7 +314,7 @@
       font-size: 16px;
       font-weight: 700;
     }
-    /* Metric Cards Section */
+    /* Dynamic Metric Cards Section */
     .metrics-section {
       display: flex;
       flex-direction: column;
@@ -351,6 +339,7 @@
       border-radius: 8px;
       padding: 16px 18px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      transition: all 0.2s ease;
     }
     .card-label {
       font-size: 12px;
@@ -430,7 +419,6 @@
     .view-actions a:hover {
       text-decoration: underline;
     }
-    /* Fixed Embedded Viewport */
     .view-frame {
       width: 100%;
       height: 80vh;
@@ -438,69 +426,6 @@
       border: none;
       background: white;
       display: block;
-    }
-    /* Modal styles */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.5);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(2px);
-    }
-    .modal-overlay.open {
-      display: flex;
-    }
-    .modal {
-      background: white;
-      border-radius: 8px;
-      max-width: 520px;
-      width: 90%;
-      padding: 24px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      border: 1px solid var(--border);
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .modal-title {
-      font-size: 16px;
-      font-weight: 700;
-    }
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      color: var(--text-muted);
-    }
-    .modal-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-    .cmd-box {
-      background: #0f172a;
-      color: #38bdf8;
-      border-radius: 6px;
-      padding: 14px 16px;
-      font-family: Consolas, Monaco, monospace;
-      font-size: 13px;
-      user-select: all;
-      word-break: break-all;
-      margin-bottom: 16px;
-      border: 1px solid #334155;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
     }
     /* Toast Notification */
     .toast {
@@ -566,7 +491,7 @@
     <div style="padding: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5;">
       <div><strong>Platform:</strong> Kubernetes + Argo Rollouts</div>
       <div style="margin-top: 3px;"><strong>Telemetry:</strong> Prometheus + Grafana</div>
-      <div style="margin-top: 3px;"><strong>Mode:</strong> Local Kind Cluster</div>
+      <div style="margin-top: 3px;"><strong>Backend:</strong> Flask Click-to-Deploy API</div>
     </div>
   </aside>
 
@@ -579,32 +504,35 @@
       </div>
       <div class="cluster-status">
         <span class="status-dot"></span>
-        <span>Kind Cluster: Healthy (1 Node)</span>
+        <span id="cluster-status-text">Kind Cluster: Healthy (1 Node)</span>
       </div>
     </header>
 
     <div class="content-area">
-      <!-- Demo Control Panel -->
+      <!-- 1-Click Interactive Demo Control Panel -->
       <div class="demo-panel">
         <div class="demo-panel-header">
           <div class="demo-panel-title">
-            <span>&#9654; Live Demonstration Control Center</span>
+            <span>&#9654; Interactive 1-Click Demonstration Control Center</span>
           </div>
-          <span class="badge badge-blue">Ready for Faculty Demo</span>
+          <span class="badge badge-blue">Ready for Faculty Presentation</span>
         </div>
         <div class="demo-buttons">
-          <button class="btn btn-success" onclick="openDemoModal('success')">
-            <span>&#10003; Run Successful Canary Promotion</span>
+          <button class="btn btn-success" id="btn-demo-success" onclick="triggerDeploy('success')">
+            <span id="icon-success">&#10003;</span>
+            <span id="text-success">Run Successful Canary Promotion</span>
           </button>
-          <button class="btn btn-danger" onclick="openDemoModal('rollback')">
-            <span>&#10007; Run Faulty Canary & Rollback</span>
+          <button class="btn btn-danger" id="btn-demo-rollback" onclick="triggerDeploy('rollback')">
+            <span id="icon-rollback">&#10007;</span>
+            <span id="text-rollback">Run Faulty Canary & Rollback</span>
           </button>
-          <button class="btn btn-secondary" onclick="openDemoModal('restore')">
-            <span>&#8635; Restore Baseline (Blue)</span>
+          <button class="btn btn-secondary" id="btn-demo-restore" onclick="triggerDeploy('restore')">
+            <span id="icon-restore">&#8635;</span>
+            <span id="text-restore">Restore Baseline (Blue)</span>
           </button>
         </div>
         <div class="demo-note">
-          <strong>Note for Demonstration:</strong> Run these commands in a PowerShell terminal to trigger the live demo. Watch the embedded Argo Rollouts UI below for real-time updates.
+          <strong>Interactive Demo:</strong> Click any button above to deploy immediately via the Python Flask backend. Watch the live metric cards and embedded Argo Rollouts UI below update in real time with zero terminal interaction.
         </div>
       </div>
 
@@ -612,25 +540,22 @@
       <div class="flow-card">
         <div class="flow-header">
           <div class="flow-title">Delivery Pipeline State</div>
-          <div class="flow-toggle">
-            <button class="flow-toggle-btn active" id="btn-flow-happy" onclick="setPipelineView('happy')">Happy Path (Promote)</button>
-            <button class="flow-toggle-btn" id="btn-flow-rollback" onclick="setPipelineView('rollback')">Failure Path (Rollback)</button>
-          </div>
+          <span class="badge badge-green" id="pipeline-badge">Baseline Active</span>
         </div>
         <div class="flow-steps">
-          <div class="flow-step active" id="p-step-1">
+          <div class="flow-step" id="p-step-1">
             <div class="step-num">STAGE 1</div>
             <div class="step-title">Traffic Split</div>
-            <div class="step-desc">20% Canary / 80% Stable</div>
+            <div class="step-desc" id="p-step-1-desc">20% Canary / 80% Stable</div>
           </div>
           <span class="flow-arrow">&#8594;</span>
-          <div class="flow-step active" id="p-step-2">
+          <div class="flow-step" id="p-step-2">
             <div class="step-num">STAGE 2</div>
             <div class="step-title">Observe Window</div>
             <div class="step-desc">10s dwell measurement period</div>
           </div>
           <span class="flow-arrow">&#8594;</span>
-          <div class="flow-step active" id="p-step-3">
+          <div class="flow-step" id="p-step-3">
             <div class="step-num">STAGE 3</div>
             <div class="step-title">Analyze</div>
             <div class="step-desc">Prometheus AnalysisTemplate (3 runs)</div>
@@ -650,43 +575,43 @@
         </div>
       </div>
 
-      <!-- Conceptual Telemetry & Metrics Cards -->
+      <!-- Live Dynamic Metric Cards -->
       <div class="metrics-section">
         <div class="metrics-note">
           <span>&#9432;</span>
-          <span>Live rollout state is shown in the embedded Argo Rollouts dashboard below. This console provides a consolidated conceptual view.</span>
+          <span>Live telemetry is continuously synchronized from Kubernetes and Prometheus every 3 seconds.</span>
         </div>
         <div class="metrics-grid">
-          <div class="card">
+          <div class="card" id="card-workload">
             <div class="card-label">
               <span>Workload</span>
-              <span class="badge badge-green">Healthy</span>
+              <span class="badge badge-green" id="badge-phase">Healthy</span>
             </div>
-            <div class="card-value">canary-demo</div>
-            <div class="card-sub">Replicas: 5/5 Pods Ready</div>
+            <div class="card-value" id="val-workload">canary-demo</div>
+            <div class="card-sub" id="sub-replicas">Replicas: 5/5 Pods Ready</div>
           </div>
-          <div class="card">
+          <div class="card" id="card-version">
             <div class="card-label">
-              <span>Active Baseline</span>
-              <span class="badge badge-blue">Production</span>
+              <span>Active Version</span>
+              <span class="badge badge-blue" id="badge-version">Live</span>
             </div>
-            <div class="card-value" style="font-size: 16px; font-family: monospace;">rollouts-demo:blue</div>
-            <div class="card-sub">Traffic Allocation: 100%</div>
+            <div class="card-value" id="val-version" style="font-size: 16px; font-family: monospace;">rollouts-demo:blue</div>
+            <div class="card-sub" id="sub-traffic">Traffic Allocation: 100%</div>
           </div>
-          <div class="card">
+          <div class="card" id="card-sla">
             <div class="card-label">
               <span>Prometheus Success SLA</span>
-              <span class="badge badge-green">&ge; 95% SLA</span>
+              <span class="badge badge-green" id="badge-sla">&ge; 95% SLA</span>
             </div>
-            <div class="card-value">100.0%</div>
+            <div class="card-value" id="val-sla">100.0%</div>
             <div class="card-sub">Query: avg_over_time [20s]</div>
           </div>
-          <div class="card">
+          <div class="card" id="card-latency">
             <div class="card-label">
               <span>P95 Latency SLA</span>
               <span class="badge badge-green">&lt; 500ms</span>
             </div>
-            <div class="card-value">&lt; 15 ms</div>
+            <div class="card-value" id="val-latency">&lt; 15 ms</div>
             <div class="card-sub">Probe response duration</div>
           </div>
         </div>
@@ -714,30 +639,10 @@
     </div>
   </main>
 
-  <!-- Interactive Demo Command Modal -->
-  <div class="modal-overlay" id="demo-modal" onclick="closeModalOnBackdrop(event)">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title" id="modal-title">Run Demonstration</div>
-        <button class="modal-close" onclick="closeDemoModal()">&times;</button>
-      </div>
-      <div class="modal-desc" id="modal-desc">
-        Execute the command below in your PowerShell terminal to trigger the rollout scenario.
-      </div>
-      <div class="cmd-box" id="modal-cmd">.\scripts\demo-canary-success.ps1</div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeDemoModal()">Close</button>
-        <button class="btn btn-success" id="btn-copy-modal" onclick="copyModalCommand()">
-          <span>&#128203; Copy Command</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast Notification -->
   <div class="toast" id="toast">
-    <span>&#10003;</span>
-    <span id="toast-text">Command copied to clipboard!</span>
+    <span id="toast-icon">&#10003;</span>
+    <span id="toast-text">Action executed successfully!</span>
   </div>
 
   <script>
@@ -755,7 +660,6 @@
       }
     };
 
-    // Dynamically generated service URLs
     const getUrls = () => ({
       rollouts: `${CONFIG.baseUrl}:${CONFIG.ports.argo}/rollouts`,
       grafana: `${CONFIG.baseUrl}:${CONFIG.ports.grafana}/d/progressive-delivery-canary/progressive-delivery-and-canary-observability?orgId=1&kiosk`,
@@ -764,7 +668,6 @@
       app: `${CONFIG.baseUrl}:${CONFIG.ports.app}`
     });
 
-    // Update all navigation links dynamically on load
     function initNavigation() {
       const urls = getUrls();
       document.getElementById('nav-applications').href = urls.rollouts;
@@ -775,7 +678,6 @@
       document.getElementById('nav-alerts').href = urls.alerts;
     }
 
-    // Tab switcher for embedded iframe
     function loadFrame(target) {
       document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
       const activeTab = document.getElementById(`tab-${target}`);
@@ -787,83 +689,156 @@
       document.getElementById('external-link').href = url;
     }
 
-    // Modal and Copy Controller
-    const scenarios = {
-      success: {
-        title: "Scenario A: Successful Canary Promotion",
-        desc: "Deploys a healthy release (argoproj/rollouts-demo:yellow). The canary receives 20% traffic, undergoes a 10s observation window, passes Prometheus metric checks, and automatically promotes to 100%.",
-        cmd: ".\\scripts\\demo-canary-success.ps1"
-      },
-      rollback: {
-        title: "Scenario B: Faulty Release & Automated Rollback",
-        desc: "Deploys a faulty release (argoproj/rollouts-demo:bad-red). Prometheus detects elevated error rates on the canary preview service, the AnalysisTemplate fails, and Argo Rollouts automatically aborts the release with zero downtime on stable.",
-        cmd: ".\\scripts\\demo-canary-rollback.ps1"
-      },
-      restore: {
-        title: "Restore Baseline Stable Version",
-        desc: "Resets the canary-demo rollout back to the healthy blue baseline version (argoproj/rollouts-demo:blue).",
-        cmd: ".\\scripts\\restore-baseline.ps1"
-      }
-    };
+    // 1-Click Deployment Trigger with Visual Spinner State
+    function triggerDeploy(action) {
+      const btnSuccess = document.getElementById('btn-demo-success');
+      const btnRollback = document.getElementById('btn-demo-rollback');
+      const btnRestore = document.getElementById('btn-demo-restore');
 
-    function openDemoModal(key) {
-      const item = scenarios[key];
-      document.getElementById('modal-title').innerText = item.title;
-      document.getElementById('modal-desc').innerText = item.desc;
-      document.getElementById('modal-cmd').innerText = item.cmd;
-      document.getElementById('demo-modal').classList.add('open');
+      const endpoints = {
+        success: '/api/demo/success',
+        rollback: '/api/demo/rollback',
+        restore: '/api/demo/restore'
+      };
+
+      const originalText = {
+        success: document.getElementById('text-success').innerText,
+        rollback: document.getElementById('text-rollback').innerText,
+        restore: document.getElementById('text-restore').innerText
+      };
+
+      // Set Loading State
+      btnSuccess.disabled = true;
+      btnRollback.disabled = true;
+      btnRestore.disabled = true;
+
+      const targetTextElem = document.getElementById(`text-${action}`);
+      const targetIconElem = document.getElementById(`icon-${action}`);
+      const origIcon = targetIconElem.innerHTML;
+
+      targetIconElem.innerHTML = '<span class="spinner"></span>';
+      if (action === 'success') targetTextElem.innerText = 'Deploying Canary (Yellow)...';
+      else if (action === 'rollback') targetTextElem.innerText = 'Deploying Faulty (Bad-Red)...';
+      else if (action === 'restore') targetTextElem.innerText = 'Restoring Baseline (Blue)...';
+
+      fetch(endpoints[action], { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          showToast(
+            action === 'success' ? 'Canary release (Yellow) initiated! Watch progressive rollout below.' :
+            action === 'rollback' ? 'Faulty release (Bad-Red) deployed! Automated rollback will trigger.' :
+            'Baseline version restored successfully!'
+          );
+          // Trigger immediate status poll
+          setTimeout(pollStatus, 800);
+        })
+        .catch(err => {
+          showToast('Error triggering deployment: ' + err, true);
+        })
+        .finally(() => {
+          setTimeout(() => {
+            btnSuccess.disabled = false;
+            btnRollback.disabled = false;
+            btnRestore.disabled = false;
+            targetIconElem.innerHTML = origIcon;
+            targetTextElem.innerText = originalText[action];
+          }, 1500);
+        });
     }
 
-    function closeDemoModal() {
-      document.getElementById('demo-modal').classList.remove('open');
-    }
-
-    function closeModalOnBackdrop(e) {
-      if (e.target.id === 'demo-modal') {
-        closeDemoModal();
-      }
-    }
-
-    function copyModalCommand() {
-      const cmd = document.getElementById('modal-cmd').innerText;
-      navigator.clipboard.writeText(cmd).then(() => {
-        showToast("Command copied to clipboard!");
-        setTimeout(closeDemoModal, 700);
-      }).catch(() => {
-        showToast("Press Ctrl+C to copy command");
-      });
-    }
-
-    function showToast(msg) {
+    function showToast(msg, isError = false) {
       const toast = document.getElementById('toast');
-      document.getElementById('toast-text').innerText = msg;
+      const text = document.getElementById('toast-text');
+      const icon = document.getElementById('toast-icon');
+      text.innerText = msg;
+      icon.innerHTML = isError ? '&#9888;' : '&#10003;';
+      toast.style.background = isError ? '#dc2626' : '#0f172a';
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2500);
+      setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
-    // Pipeline State Toggle
-    function setPipelineView(mode) {
-      const btnHappy = document.getElementById('btn-flow-happy');
-      const btnRollback = document.getElementById('btn-flow-rollback');
+    // Dynamic Rollout Status Polling (Every 3 Seconds)
+    function pollStatus() {
+      fetch('/api/rollout/status')
+        .then(r => r.json())
+        .then(data => {
+          if (data.status !== 'ok') return;
+
+          // 1. Update Workload & Phase Badge
+          const badgePhase = document.getElementById('badge-phase');
+          badgePhase.innerText = data.phase;
+          if (data.phase === 'Healthy') {
+            badgePhase.className = 'badge badge-green';
+          } else if (data.phase === 'Degraded') {
+            badgePhase.className = 'badge badge-red';
+          } else if (data.phase === 'Progressing' || data.phase === 'Paused') {
+            badgePhase.className = 'badge badge-blue';
+          }
+
+          document.getElementById('sub-replicas').innerText = `Replicas: ${data.replicas} Pods Ready`;
+
+          // 2. Update Image & Traffic
+          document.getElementById('val-version').innerText = data.image.replace('argoproj/', '');
+          document.getElementById('sub-traffic').innerText = `Traffic Allocation: ${data.weight}%`;
+
+          // 3. Update SLAs
+          document.getElementById('val-sla').innerText = data.slaSuccess;
+          document.getElementById('val-latency').innerText = data.slaLatency;
+
+          const badgeSla = document.getElementById('badge-sla');
+          if (parseFloat(data.slaSuccess) >= 95.0) {
+            badgeSla.className = 'badge badge-green';
+            badgeSla.innerText = '≥ 95% SLA Pass';
+          } else {
+            badgeSla.className = 'badge badge-red';
+            badgeSla.innerText = '< 95% SLA Fail';
+          }
+
+          // 4. Update Pipeline Graphic
+          updatePipelineDiagram(data);
+        })
+        .catch(() => {});
+    }
+
+    function updatePipelineDiagram(data) {
+      const step1 = document.getElementById('p-step-1');
+      const step2 = document.getElementById('p-step-2');
+      const step3 = document.getElementById('p-step-3');
       const step4a = document.getElementById('p-step-4a');
       const step4b = document.getElementById('p-step-4b');
+      const pipeBadge = document.getElementById('pipeline-badge');
 
-      if (mode === 'happy') {
-        btnHappy.classList.add('active');
-        btnRollback.classList.remove('active');
+      if (data.phase === 'Healthy') {
+        pipeBadge.innerText = 'Stable Baseline (100%)';
+        pipeBadge.className = 'badge badge-green';
+        step1.className = 'flow-step';
+        step2.className = 'flow-step';
+        step3.className = 'flow-step';
         step4a.className = 'flow-step healthy';
         step4b.className = 'flow-step';
-      } else {
-        btnRollback.classList.add('active');
-        btnHappy.classList.remove('active');
+      } else if (data.phase === 'Progressing' || data.phase === 'Paused') {
+        pipeBadge.innerText = `Canary Active (${data.weight}%)`;
+        pipeBadge.className = 'badge badge-blue';
+        step1.className = 'flow-step active';
+        step2.className = 'flow-step active';
+        step3.className = 'flow-step active';
+        step4a.className = 'flow-step';
+        step4b.className = 'flow-step';
+      } else if (data.phase === 'Degraded') {
+        pipeBadge.innerText = 'Rollback Triggered (0%)';
+        pipeBadge.className = 'badge badge-red';
+        step1.className = 'flow-step';
+        step2.className = 'flow-step';
+        step3.className = 'flow-step failed';
         step4a.className = 'flow-step';
         step4b.className = 'flow-step failed';
       }
     }
 
-    // Initialize on DOM ready
     window.addEventListener('DOMContentLoaded', () => {
       initNavigation();
+      pollStatus();
+      setInterval(pollStatus, 3000);
     });
   </script>
 </body>
