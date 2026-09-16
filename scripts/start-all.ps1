@@ -2,16 +2,16 @@
 kubectl cluster-info
 
 Write-Host "`n[2/6] Starting Argo Rollouts Dashboard (Port 3100)..." -ForegroundColor Cyan
-Start-Process -NoNewWindow -FilePath "kubectl" -ArgumentList "argo rollouts dashboard"
+Start-Process -NoNewWindow -FilePath "powershell" -ArgumentList "-NoProfile -Command `"while (`$true) { kubectl argo rollouts dashboard; Start-Sleep 1 }`""
 
 Write-Host "[3/6] Starting Prometheus Port-Forward (Port 9090)..." -ForegroundColor Cyan
-Start-Process -NoNewWindow -FilePath "kubectl" -ArgumentList "port-forward svc/prometheus 9090:9090 -n monitoring"
+Start-Process -NoNewWindow -FilePath "powershell" -ArgumentList "-NoProfile -Command `"while (`$true) { kubectl port-forward svc/prometheus 9090:9090 -n monitoring; Start-Sleep 1 }`""
 
 Write-Host "[4/6] Starting Grafana Port-Forward (Port 3000)..." -ForegroundColor Cyan
-Start-Process -NoNewWindow -FilePath "kubectl" -ArgumentList "port-forward svc/grafana 3000:3000 -n monitoring"
+Start-Process -NoNewWindow -FilePath "powershell" -ArgumentList "-NoProfile -Command `"while (`$true) { kubectl port-forward svc/grafana 3000:3000 -n monitoring; Start-Sleep 1 }`""
 
 Write-Host "[5/6] Starting Rollouts-Demo App Port-Forward (Port 8080)..." -ForegroundColor Cyan
-Start-Process -NoNewWindow -FilePath "kubectl" -ArgumentList "port-forward svc/canary-demo 8080:80"
+Start-Process -NoNewWindow -FilePath "powershell" -ArgumentList "-NoProfile -Command `"while (`$true) { kubectl port-forward svc/canary-demo 8080:80; Start-Sleep 1 }`""
 
 Write-Host "[6/6] Starting Flask Click-to-Deploy Backend (Port 5000)..." -ForegroundColor Cyan
 Start-Process -NoNewWindow -FilePath "python" -ArgumentList "portal/server.py"
