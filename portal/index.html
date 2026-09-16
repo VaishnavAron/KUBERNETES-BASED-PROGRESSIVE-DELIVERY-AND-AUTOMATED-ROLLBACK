@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -447,6 +447,138 @@
     .toast.show {
       display: flex;
     }
+    /* Enhancement 1: Rollout Event Timeline */
+    .timeline-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .timeline-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .timeline-box {
+      max-height: 180px;
+      overflow-y: auto;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.4;
+    }
+    .timeline-time {
+      color: var(--text-muted);
+      font-size: 11px;
+      white-space: nowrap;
+      min-width: 60px;
+    }
+    .timeline-icon {
+      font-size: 12px;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+    .timeline-msg {
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    /* Enhancement 2: Active Pods Panel */
+    .pods-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .pod-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    .pod-row-label {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 55px;
+    }
+    .pod-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex: 1;
+      margin: 0 8px;
+    }
+    .pod-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .pod-dot-blue { background-color: #2563eb; }
+    .pod-dot-yellow { background-color: #eab308; }
+    .pod-dot-red { background-color: #dc2626; }
+    .pod-count-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Enhancement 3: Request Grid Legend (Live Application Tab) */
+    .app-legend {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 10px 16px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text);
+    }
+    .app-legend-title {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .app-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .legend-dot-blue { background-color: #2563eb; }
+    .legend-dot-yellow { background-color: #eab308; }
+    .legend-dot-red { background-color: #dc2626; }
   </style>
 </head>
 <body>
@@ -575,6 +707,19 @@
         </div>
       </div>
 
+      <!-- Enhancement 1: Rollout Event Timeline -->
+      <div class="timeline-card">
+        <div class="timeline-header">
+          <div class="timeline-title">
+            <span>&#9201; Real-Time Rollout Event Timeline</span>
+          </div>
+          <span class="badge badge-blue">Live Cluster Telemetry (Last 15 Events)</span>
+        </div>
+        <div class="timeline-box" id="timeline-box">
+          <div style="color: var(--text-muted); font-style: italic;">Loading rollout events...</div>
+        </div>
+      </div>
+
       <!-- Live Dynamic Metric Cards -->
       <div class="metrics-section">
         <div class="metrics-note">
@@ -614,6 +759,25 @@
             <div class="card-value" id="val-latency">&lt; 15 ms</div>
             <div class="card-sub">Probe response duration</div>
           </div>
+          <!-- Enhancement 2: Active Pods Mini-Panel -->
+          <div class="card" id="card-pods">
+            <div class="card-label">
+              <span>Active Pods Allocation</span>
+              <span class="badge badge-blue" id="badge-total-pods">5 Pods</span>
+            </div>
+            <div class="pods-container">
+              <div class="pod-row">
+                <span class="pod-row-label">Stable:</span>
+                <div class="pod-dots" id="dots-stable"></div>
+                <span class="pod-count-text" id="text-stable-pods">5 pods</span>
+              </div>
+              <div class="pod-row">
+                <span class="pod-row-label">Canary:</span>
+                <div class="pod-dots" id="dots-canary"></div>
+                <span class="pod-count-text" id="text-canary-pods">0 pods</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -632,6 +796,14 @@
               <span>&#8599;</span>
             </a>
           </div>
+        </div>
+        <!-- Enhancement 3: Live Application Legend -->
+        <div class="app-legend" id="live-app-legend">
+          <span class="app-legend-title">Live Traffic Request Grid:</span>
+          <span>Each square = one HTTP request</span>
+          <span class="app-legend-item"><span class="legend-dot legend-dot-blue"></span> Blue = Stable</span>
+          <span class="app-legend-item"><span class="legend-dot legend-dot-yellow"></span> Yellow = Canary</span>
+          <span class="app-legend-item"><span class="legend-dot legend-dot-red"></span> Red = Failed</span>
         </div>
         <!-- Fully scrollable 800px / 80vh iframe -->
         <iframe id="main-frame" class="view-frame" src="http://localhost:3100/rollouts"></iframe>
@@ -687,6 +859,12 @@
       const url = urls[target];
       document.getElementById('main-frame').src = url;
       document.getElementById('external-link').href = url;
+
+      // Enhancement 3: Toggle Live Application legend visibility
+      const legend = document.getElementById('live-app-legend');
+      if (legend) {
+        legend.style.display = (target === 'app') ? 'flex' : 'none';
+      }
     }
 
     // 1-Click Deployment Trigger with Visual Spinner State
@@ -794,10 +972,97 @@
             badgeSla.innerText = '< 95% SLA Fail';
           }
 
-          // 4. Update Pipeline Graphic
+          // 4. Update Active Pods (Enhancement 2)
+          renderActivePods(data);
+
+          // 5. Update Pipeline Graphic
           updatePipelineDiagram(data);
         })
         .catch(() => {});
+
+      // Enhancement 1: Poll Rollout Events
+      fetch('/api/rollout/events')
+        .then(r => r.json())
+        .then(events => {
+          if (Array.isArray(events)) {
+            renderTimelineEvents(events);
+          }
+        })
+        .catch(() => {});
+    }
+
+    function renderActivePods(data) {
+      const stableCount = data.stablePods !== undefined ? data.stablePods : 5;
+      const canaryCount = data.canaryPods !== undefined ? data.canaryPods : 0;
+      const total = stableCount + canaryCount;
+
+      const badgeTotal = document.getElementById('badge-total-pods');
+      if (badgeTotal) badgeTotal.innerText = `${total} Pods`;
+
+      const textStable = document.getElementById('text-stable-pods');
+      if (textStable) textStable.innerText = `${stableCount} pod${stableCount === 1 ? '' : 's'}`;
+
+      const textCanary = document.getElementById('text-canary-pods');
+      if (textCanary) textCanary.innerText = `${canaryCount} pod${canaryCount === 1 ? '' : 's'}`;
+
+      // Render Stable Dots (Blue)
+      const stableDotsContainer = document.getElementById('dots-stable');
+      if (stableDotsContainer) {
+        let stableHtml = '';
+        for (let i = 0; i < stableCount; i++) {
+          stableHtml += '<span class="pod-dot pod-dot-blue" title="Stable Pod"></span>';
+        }
+        if (stableCount === 0) stableHtml = '<span style="color:var(--text-muted); font-size:11px;">none</span>';
+        stableDotsContainer.innerHTML = stableHtml;
+      }
+
+      // Render Canary Dots (Yellow or Red if Degraded)
+      const canaryDotsContainer = document.getElementById('dots-canary');
+      if (canaryDotsContainer) {
+        let canaryHtml = '';
+        const canaryDotClass = data.phase === 'Degraded' ? 'pod-dot pod-dot-red' : 'pod-dot pod-dot-yellow';
+        for (let i = 0; i < canaryCount; i++) {
+          canaryHtml += `<span class="pod-dot ${canaryDotClass}" title="Canary Pod (${data.phase})"></span>`;
+        }
+        if (canaryCount === 0) canaryHtml = '<span style="color:var(--text-muted); font-size:11px;">none (idle)</span>';
+        canaryDotsContainer.innerHTML = canaryHtml;
+      }
+    }
+
+    function renderTimelineEvents(events) {
+      const box = document.getElementById('timeline-box');
+      if (!box) return;
+
+      if (!events || events.length === 0) {
+        box.innerHTML = '<div style="color: var(--text-muted); font-style: italic;">No rollout events recorded yet.</div>';
+        return;
+      }
+
+      const icons = {
+        progressing: '🔵',
+        info: '🟡',
+        healthy: '🟢',
+        failed: '🔴'
+      };
+
+      const html = events.map(e => {
+        const icon = icons[e.type] || '⚪';
+        return `<div class="timeline-item">
+          <span class="timeline-time">[${e.time}]</span>
+          <span class="timeline-icon">${icon}</span>
+          <span class="timeline-msg">${escapeHtml(e.message)}</span>
+        </div>`;
+      }).join('');
+
+      box.innerHTML = html;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     function updatePipelineDiagram(data) {
