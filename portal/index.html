@@ -836,7 +836,7 @@
         : `${window.location.protocol}//${window.location.hostname}`,
       ports: {
         portal: 5000,
-        argo: 3100,
+        argo: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 3100 : 3101,
         grafana: 3000,
         prometheus: 9090,
         app: 8080

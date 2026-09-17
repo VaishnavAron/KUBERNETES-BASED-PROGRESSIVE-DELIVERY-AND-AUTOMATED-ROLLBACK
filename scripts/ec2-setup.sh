@@ -1,169 +1,158 @@
 #!/bin/bash
 # ==============================================================================
-# BTech Major Project: Progressive Delivery & Automated Rollback
-# Single-Command Setup Script for Ubuntu 22.04 / 24.04 LTS (AWS EC2)
+# BTech Project: Progressive Delivery + Automated Rollback
+# EC2 Setup Script (Ubuntu 22.04/24.04) — Idempotent
 # ==============================================================================
-
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 echo "======================================================================"
-echo " Starting Progressive Delivery Environment Setup on AWS EC2"
+echo " Setting up Progressive Delivery Environment"
 echo " Project Root: ${PROJECT_ROOT}"
-echo " Local Time:   $(date)"
 echo "======================================================================"
 
-# ------------------------------------------------------------------------------
-# [STEP 1/10] System Packages & Prerequisites
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 1/10] Updating system packages and installing prerequisites...\033[0m"
+echo -e "\n[STEP 1/10] Installing system packages..."
 sudo apt-get update -y
-sudo apt-get install -y \
-    curl \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    python3 \
-    python3-pip \
-    python3-flask \
-    git \
-    jq \
-    conntrack
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    curl apt-transport-https ca-certificates gnupg lsb-release \
+    python3 python3-pip python3-flask git jq conntrack socat
 
-# Ensure Flask is available
-if ! python3 -c "import flask" &> /dev/null; then
-    echo "Installing Flask via pip..."
-    sudo pip3 install flask --break-system-packages 2>/dev/null || sudo pip3 install flask || true
-fi
-
-# ------------------------------------------------------------------------------
-# [STEP 2/10] Docker Engine Installation & User Group Configuration
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 2/10] Setting up Docker Engine...\033[0m"
+echo -e "\n[STEP 2/10] Docker Engine..."
 if ! command -v docker &> /dev/null; then
-    echo "Docker not found. Installing official Docker Engine..."
-    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    sudo sh /tmp/get-docker.sh
-    rm -f /tmp/get-docker.sh
-else
-    echo "Docker is already installed ($(docker --version)). Skipping installation."
+    curl -fsSL https://get.docker.com | sudo sh
 fi
-
-# Add current user to docker group and start service
 sudo usermod -aG docker "$USER" || true
-sudo systemctl enable docker
-sudo systemctl start docker
-
-# Ensure current session has permissions to the docker socket immediately
+sudo systemctl enable --now docker
 sudo chmod 666 /var/run/docker.sock || true
 
-echo "Docker verification:"
-docker info > /dev/null && echo " Docker daemon is active and accessible."
-
-# ------------------------------------------------------------------------------
-# [STEP 3/10] Install Kind (Kubernetes-in-Docker) v0.27.0
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 3/10] Installing Kind (v0.27.0, Linux amd64)...\033[0m"
-KIND_BIN="/usr/local/bin/kind"
-if [ ! -f "$KIND_BIN" ] || ! "$KIND_BIN" --version 2>&1 | grep -q "0.27.0"; then
-    echo "Downloading kind v0.27.0..."
+echo -e "\n[STEP 3/10] kind v0.27.0..."
+if ! command -v kind &> /dev/null; then
     curl -Lo /tmp/kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64
-    chmod +x /tmp/kind
-    sudo mv /tmp/kind "$KIND_BIN"
-    echo "Kind v0.27.0 installed successfully to ${KIND_BIN}."
-else
-    echo "Kind v0.27.0 is already installed. Skipping."
+    chmod +x /tmp/kind && sudo mv /tmp/kind /usr/local/bin/kind
 fi
 
-# ------------------------------------------------------------------------------
-# [STEP 4/10] Install kubectl (Latest Stable, Linux amd64)
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 4/10] Installing kubectl...\033[0m"
-KUBECTL_BIN="/usr/local/bin/kubectl"
+echo -e "\n[STEP 4/10] kubectl..."
 if ! command -v kubectl &> /dev/null; then
-    KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-    echo "Downloading kubectl (${KUBECTL_VERSION})..."
-    curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-    chmod +x kubectl
-    sudo mv kubectl "$KUBECTL_BIN"
-    echo "kubectl installed successfully to ${KUBECTL_BIN}."
-else
-    echo "kubectl is already installed ($(kubectl version --client --short 2>/dev/null || kubectl version --client)). Skipping."
+    KV=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+    curl -Lo /tmp/kubectl "https://dl.k8s.io/release/${KV}/bin/linux/amd64/kubectl"
+    chmod +x /tmp/kubectl && sudo mv /tmp/kubectl /usr/local/bin/kubectl
 fi
 
-# ------------------------------------------------------------------------------
-# [STEP 5/10] Install kubectl-argo-rollouts plugin (v1.10.0, Linux amd64)
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 5/10] Installing kubectl-argo-rollouts plugin (v1.10.0)...\033[0m"
-PLUGIN_BIN="/usr/local/bin/kubectl-argo-rollouts"
-if [ ! -f "$PLUGIN_BIN" ]; then
-    echo "Downloading argo-rollouts plugin v1.10.0..."
-    curl -Lo /tmp/kubectl-argo-rollouts https://github.com/argoproj/argo-rollouts/releases/download/v1.10.0/kubectl-argo-rollouts-linux-amd64
+echo -e "\n[STEP 5/10] kubectl-argo-rollouts plugin v1.10.0..."
+if ! command -v kubectl-argo-rollouts &> /dev/null; then
+    curl -Lo /tmp/kubectl-argo-rollouts \
+      https://github.com/argoproj/argo-rollouts/releases/download/v1.10.0/kubectl-argo-rollouts-linux-amd64
     chmod +x /tmp/kubectl-argo-rollouts
-    sudo mv /tmp/kubectl-argo-rollouts "$PLUGIN_BIN"
-    echo "kubectl-argo-rollouts plugin installed to ${PLUGIN_BIN}."
-else
-    echo "kubectl-argo-rollouts plugin is already installed. Skipping."
+    sudo mv /tmp/kubectl-argo-rollouts /usr/local/bin/kubectl-argo-rollouts
 fi
 
-# ------------------------------------------------------------------------------
-# [STEP 6/10] Create Kind Cluster 'rollouts-demo'
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 6/10] Creating Kind Cluster 'rollouts-demo'...\033[0m"
-if kind get clusters 2>/dev/null | grep -q "^rollouts-demo$"; then
-    echo "Cluster 'rollouts-demo' already exists. Skipping creation."
-else
-    echo "Creating single-node Kind cluster 'rollouts-demo'..."
+echo -e "\n[STEP 6/10] kind cluster 'rollouts-demo'..."
+if ! kind get clusters 2>/dev/null | grep -q "^rollouts-demo$"; then
     kind create cluster --name rollouts-demo
+else
+    echo "Cluster already exists."
 fi
-
 kubectl cluster-info --context kind-rollouts-demo
 
-# ------------------------------------------------------------------------------
-# [STEP 7/10] Deploy Argo Rollouts Controller & CRDs
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 7/10] Applying Argo Rollouts Controller & CRDs...\033[0m"
-kubectl apply -n argo-rollouts -f "${PROJECT_ROOT}/manifests/argo-rollouts/install.yaml"
+echo -e "\n[STEP 7/10] Argo Rollouts controller & CRDs..."
+kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply --server-side -n argo-rollouts -f "${PROJECT_ROOT}/manifests/argo-rollouts/install.yaml"
+kubectl rollout status deployment/argo-rollouts -n argo-rollouts --timeout=180s
 
-echo "Waiting for Argo Rollouts controller to become available (up to 120s)..."
-kubectl wait --for=condition=Available --timeout=120s deployment/argo-rollouts -n argo-rollouts
+echo -e "\n[STEP 8/10] Monitoring stack..."
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f "${PROJECT_ROOT}/manifests/monitoring/prometheus.yaml"
+kubectl apply -f "${PROJECT_ROOT}/manifests/monitoring/blackbox-exporter.yaml"
+kubectl apply -f "${PROJECT_ROOT}/manifests/monitoring/grafana.yaml"
 
-# ------------------------------------------------------------------------------
-# [STEP 8/10] Deploy Monitoring Stack (Prometheus, Blackbox, Grafana)
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 8/10] Applying Monitoring Manifests (Prometheus, Blackbox Exporter, Grafana)...\033[0m"
-kubectl apply -f "${PROJECT_ROOT}/manifests/monitoring/"
+kubectl rollout status deployment/prometheus -n monitoring --timeout=180s
+kubectl rollout status deployment/blackbox-exporter -n monitoring --timeout=120s
+kubectl rollout status deployment/grafana -n monitoring --timeout=120s
 
-echo "Waiting for Prometheus deployment to be available..."
-kubectl wait --for=condition=Available --timeout=180s deployment/prometheus -n monitoring
+echo "Provisioning Grafana dashboard..."
+python3 - <<PYEOF
+p = "${PROJECT_ROOT}/manifests/monitoring/dashboard.json"
+with open(p, 'rb') as f:
+    data = f.read()
+if data.startswith(b'\xef\xbb\xbf'):
+    with open(p, 'wb') as f:
+        f.write(data[3:])
+    print('BOM stripped from dashboard.json')
+else:
+    print('No BOM found')
+PYEOF
 
-echo "Waiting for Blackbox Exporter to be available..."
-kubectl wait --for=condition=Available --timeout=120s deployment/blackbox-exporter -n monitoring
+kubectl create configmap grafana-dashboards \
+  --from-file=canary-dashboard.json="${PROJECT_ROOT}/manifests/monitoring/dashboard.json" \
+  -n monitoring --dry-run=client -o yaml | kubectl apply -f -
 
-echo "Waiting for Grafana deployment to be available..."
-kubectl wait --for=condition=Available --timeout=120s deployment/grafana -n monitoring
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      options:
+        path: /var/lib/grafana/dashboards
+EOF
 
-# ------------------------------------------------------------------------------
-# [STEP 9/10] Deploy Application (Canary Rollout & AnalysisTemplate)
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;34m[STEP 9/10] Applying Application Manifests (Rollout & AnalysisTemplate)...\033[0m"
-kubectl apply -f "${PROJECT_ROOT}/manifests/app/"
+if ! kubectl get deployment grafana -n monitoring -o jsonpath='{.spec.template.spec.volumes[*].name}' | grep -q dash-json; then
+  kubectl patch deployment grafana -n monitoring --type=json -p='[
+    {"op":"add","path":"/spec/template/spec/volumes/-","value":{"name":"dash-provider","configMap":{"name":"grafana-dashboard-provider"}}},
+    {"op":"add","path":"/spec/template/spec/volumes/-","value":{"name":"dash-json","configMap":{"name":"grafana-dashboards"}}},
+    {"op":"add","path":"/spec/template/spec/containers/0/volumeMounts/-","value":{"name":"dash-provider","mountPath":"/etc/grafana/provisioning/dashboards"}},
+    {"op":"add","path":"/spec/template/spec/containers/0/volumeMounts/-","value":{"name":"dash-json","mountPath":"/var/lib/grafana/dashboards"}}
+  ]'
+  kubectl rollout status deployment/grafana -n monitoring --timeout=120s
+fi
 
-echo "Waiting for Canary Rollout baseline to stabilize..."
-kubectl argo rollouts status canary-demo --timeout 120s || true
+echo -e "\n[STEP 9/10] Application + Services..."
+kubectl apply -f "${PROJECT_ROOT}/manifests/app/analysis-template.yaml"
+kubectl apply -f "${PROJECT_ROOT}/manifests/app/canary-rollout.yaml"
 
-# ------------------------------------------------------------------------------
-# [STEP 10/10] Final Health Verification & Instructions
-# ------------------------------------------------------------------------------
-echo -e "\n\033[1;32m[STEP 10/10] Verification Complete! Current Cluster Pods:\033[0m"
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary-demo
+  labels: {app: canary-demo}
+spec:
+  type: ClusterIP
+  ports:
+  - {port: 80, targetPort: http, protocol: TCP, name: http}
+  selector: {app: canary-demo}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary-demo-preview
+  labels: {app: canary-demo}
+spec:
+  type: ClusterIP
+  ports:
+  - {port: 80, targetPort: http, protocol: TCP, name: http}
+  selector: {app: canary-demo}
+EOF
+
+kubectl rollout status rollout/canary-demo --timeout=180s
+
+echo -e "\n[STEP 10/10] Verification:"
 kubectl get pods -A
 
+echo ""
 echo "======================================================================"
-echo -e "\033[1;32m SUCCESS! Progressive Delivery Environment is Ready.\033[0m"
-echo "======================================================================"
-echo "Next step: Start all background services and the Operations Console:"
-echo "    ./scripts/ec2-start.sh"
+echo " SUCCESS! Environment ready."
+echo " Next: ./scripts/ec2-start.sh"
 echo "======================================================================"
